@@ -10,8 +10,17 @@ type oneliner struct {
 }
 
 func (o oneliner) Write(p []byte) (n int, err error) {
-	err = json.NewEncoder(o.backend).Encode(string(p))
-	return len(p), err
+	data, err := json.Marshal(string(p))
+	if err != nil {
+		return 0, err
+	}
+	if len(data) != 0 && data[len(data)-1] != '\n' {
+		data = append(data, '\n')
+	}
+	if _, err := o.backend.Write(data); err != nil {
+		return 0, err
+	}
+	return len(p), nil
 }
 
 // Wrap backend, so that every write will be converted to one line string
