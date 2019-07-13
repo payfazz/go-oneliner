@@ -3,6 +3,9 @@ package oneliner
 import (
 	"encoding/json"
 	"io"
+	"reflect"
+	"runtime"
+	"unsafe"
 )
 
 type oneliner struct {
@@ -10,16 +13,20 @@ type oneliner struct {
 }
 
 func (o oneliner) Write(p []byte) (n int, err error) {
-	data, err := json.Marshal(string(p))
+	// peform unsafe zero-copy conversion from byte slice to string
+	// this is safe because of io.Writer contract
+	pHeader := *(*reflect.SliceHeader)(unsafe.Pointer(&p))
+	pString := *(*string)(unsafe.Pointer(&reflect.StringHeader{
+		Data: pHeader.Data,
+		Len:  pHeader.Len,
+	}))
+
+	err = json.NewEncoder(o.backend).Encode(pString)
+	runtime.KeepAlive(p) // make sure p live until here
 	if err != nil {
 		return 0, err
 	}
-	if len(data) != 0 && data[len(data)-1] != '\n' {
-		data = append(data, '\n')
-	}
-	if _, err := o.backend.Write(data); err != nil {
-		return 0, err
-	}
+
 	return len(p), nil
 }
 
