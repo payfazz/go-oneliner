@@ -9,7 +9,7 @@ import (
 )
 
 type oneliner struct {
-	backend io.Writer
+	encoder *json.Encoder
 }
 
 func (o oneliner) Write(p []byte) (n int, err error) {
@@ -21,7 +21,7 @@ func (o oneliner) Write(p []byte) (n int, err error) {
 		Len:  pHeader.Len,
 	}))
 
-	err = json.NewEncoder(o.backend).Encode(pString)
+	err = o.encoder.Encode(pString)
 	runtime.KeepAlive(p) // make sure p live until here
 	if err != nil {
 		return 0, err
@@ -33,6 +33,6 @@ func (o oneliner) Write(p []byte) (n int, err error) {
 // Wrap backend, so that every write will be converted to one line string
 func Wrap(backend io.Writer) io.Writer {
 	return oneliner{
-		backend: backend,
+		encoder: json.NewEncoder(backend),
 	}
 }
