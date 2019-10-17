@@ -22,7 +22,7 @@ func (o oneliner) Write(p []byte) (n int, err error) {
 	}))
 
 	err = o.encoder.Encode(pString)
-	runtime.KeepAlive(p) // make sure p live until here
+	runtime.KeepAlive(&p) // make sure p live until here
 	if err != nil {
 		return 0, err
 	}
