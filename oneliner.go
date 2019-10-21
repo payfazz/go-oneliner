@@ -1,38 +1,30 @@
 package oneliner
 
 import (
-	"encoding/json"
 	"io"
-	"reflect"
-	"runtime"
-	"unsafe"
 )
 
 type oneliner struct {
-	encoder *json.Encoder
+	backend io.Writer
 }
 
 func (o oneliner) Write(p []byte) (n int, err error) {
-	// peform unsafe zero-copy conversion from byte slice to string
-	// this is safe because of io.Writer contract
-	pHeader := *(*reflect.SliceHeader)(unsafe.Pointer(&p))
-	pString := *(*string)(unsafe.Pointer(&reflect.StringHeader{
-		Data: pHeader.Data,
-		Len:  pHeader.Len,
-	}))
-
-	err = o.encoder.Encode(pString)
-	runtime.KeepAlive(&p) // make sure p live until here
+	e := getEncoder()
+	e.stringBytes(p)
+	e.writeNewLine()
+	_, err = o.backend.Write(e.getAll())
 	if err != nil {
-		return 0, err
+		n = 0
+	} else {
+		n = len(p)
 	}
-
-	return len(p), nil
+	putEncoder(e)
+	return
 }
 
 // Wrap backend, so that every write will be converted to one line string
 func Wrap(backend io.Writer) io.Writer {
 	return oneliner{
-		encoder: json.NewEncoder(backend),
+		backend: backend,
 	}
 }
