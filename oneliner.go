@@ -1,3 +1,4 @@
+// Package oneliner for wrapping Write call
 package oneliner
 
 import (
@@ -5,15 +6,14 @@ import (
 )
 
 // OneLiner is wrapper type return by Wrap
-type OneLiner struct {
-	backend io.Writer
-}
+type OneLiner struct{ io.Writer }
 
+// Write will format p into JSON string and write it
 func (o OneLiner) Write(p []byte) (n int, err error) {
 	e := getEncoder()
 	e.stringBytes(p)
 	e.writeNewLine()
-	_, err = o.backend.Write(e.getAll())
+	_, err = o.Writer.Write(e.getAll())
 	if err != nil {
 		n = 0
 	} else {
@@ -25,7 +25,12 @@ func (o OneLiner) Write(p []byte) (n int, err error) {
 
 // Wrap backend, so that every write will be converted to one line string
 func Wrap(backend io.Writer) OneLiner {
+	// already wrapped?
+	if backend, ok := backend.(OneLiner); ok {
+		return backend
+	}
+
 	return OneLiner{
-		backend: backend,
+		Writer: backend,
 	}
 }
