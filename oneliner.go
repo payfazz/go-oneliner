@@ -4,11 +4,12 @@ import (
 	"io"
 )
 
-type oneliner struct {
+// OneLiner is wrapper type return by Wrap
+type OneLiner struct {
 	backend io.Writer
 }
 
-func (o oneliner) Write(p []byte) (n int, err error) {
+func (o OneLiner) Write(p []byte) (n int, err error) {
 	e := getEncoder()
 	e.stringBytes(p)
 	e.writeNewLine()
@@ -23,8 +24,8 @@ func (o oneliner) Write(p []byte) (n int, err error) {
 }
 
 // Wrap backend, so that every write will be converted to one line string
-func Wrap(backend io.Writer) io.Writer {
-	return oneliner{
+func Wrap(backend io.Writer) OneLiner {
+	return OneLiner{
 		backend: backend,
 	}
 }
