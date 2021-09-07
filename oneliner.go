@@ -1,4 +1,6 @@
 // Package oneliner for wrapping Write call
+//
+// all write will be converted to single JSON string
 package oneliner
 
 import (
